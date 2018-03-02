@@ -1,0 +1,20 @@
+{
+  "name": "presentation-vue-vs-react-heroku",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node app",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.16.1",
+    "cookie-parser": "^1.4.3",
+    "express": "~4.14.1",
+    "mongodb": "^2.2.24",
+    "morgan": "^1.8.1"
+  },
+  "devDependencies": {
+    "eslint": "^3.16.0",
+    "eslint-config-google": "^0.7.1"
+  }
+}
