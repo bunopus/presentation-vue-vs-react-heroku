@@ -1,0 +1,3 @@
+[submodule "public/presentation"]
+	path = public/presentation
+	url = git@github.com:bunopus/presentation-vue-vs-react.git
