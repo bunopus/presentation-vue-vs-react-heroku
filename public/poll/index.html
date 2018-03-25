@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+    <title>Dart alive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="jquery-3.1.1.min.js"></script>
+    <style>
+        .spinner {
+            border: 5px solid rgba(243, 13, 18, 0.2);
+            border-radius: 50%;
+            border-top: 5px solid #db0002;
+            width: 50px;
+            height: 50px;
+            -webkit-animation: spin 2s linear infinite;
+            animation: spin 2s linear infinite;
+        }
+
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .votes {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+        }
+
+        .logo {
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            cursor: pointer;
+        }
+
+        .logo:hover img{
+            width: 35%;
+            opacity: 1;
+        }
+
+        .logo img {
+            width: 30%;
+            opacity: 0.5;
+        }
+
+        .logo.selected img{
+            width: 50%;
+            opacity: 1;
+        }
+
+        @media only screen and (orientation: portrait) {
+            .votes {
+                flex-direction: column;
+            }
+        }
+
+        body { background: url('img/bg.png'); overflow: hidden }
+
+        .invisible {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="loader">
+    <div class="spinner"></div>
+</div>
+
+<div class="votes invisible">
+    <div class="logo" id="vue"><img src="img/vue_logo.png"></div>
+    <div class="logo" id="react"><img src="img/react_logo.png"></div>
+    <div class="logo" id="angular"><img src="img/angular_logo.png"></div>
+</div>
+<script src="fingerprint2.min.js"></script>
+<script>
+
+    function showLoader(show) {
+        $(".loader").toggleClass("invisible", !show);
+        $(".votes").toggleClass("invisible", show);
+    }
+
+    function setCurrentChoise(id) {
+        $(".votes .logo").removeClass("selected");
+        $("#"+id).addClass("selected");
+    }
+
+    function vote(opinion) {
+        showLoader(true);
+
+        var fp = new Fingerprint2();
+        fp.get(function (result) {
+            $.ajax({
+                url: "/vote",
+                type: "POST",
+                headers: {
+                    "Accept": "application/json; charset=utf-8",
+                    "fingerprint": result
+                },
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({vote: opinion}),
+            }).fail(function (error) {
+                if(error.status === 429) {
+                    var time = error.responseJSON.time/1000;
+                    showText("Подожди " + Math.round(time) + " сек");
+                } else {
+                    console.log(error);
+                }
+            }).always(function () {
+                showLoader(false);
+            });
+        });
+    }
+
+    $(document).ready(function () {
+        showLoader(false);
+    });
+
+    $(".logo").on("click", function () {
+        setCurrentChoise(this.id);
+        vote(this.id);
+    });
+
+</script>
+</body>
+</html>
