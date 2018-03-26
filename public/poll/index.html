@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-    <title>Dart alive</title>
+    <title>Vue React Angular</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="jquery-3.1.1.min.js"></script>
     <style>
@@ -86,7 +86,6 @@
     <div class="logo" id="react"><img src="img/react_logo.png"></div>
     <div class="logo" id="angular"><img src="img/angular_logo.png"></div>
 </div>
-<script src="fingerprint2.min.js"></script>
 <script>
 
     function showLoader(show) {
@@ -102,28 +101,24 @@
     function vote(options, callback) {
         showLoader(true);
 
-        var fp = new Fingerprint2();
-        fp.get(function (result) {
-            $.ajax($.extend(
-                {
-                    url: "/vote",
-                    headers: {
-                        "Accept": "application/json; charset=utf-8",
-                        "fingerprint": result
-                    },
-                    contentType: "application/json; charset=utf-8",
-                }, options)).done(callback).fail(function (error) {
-                ///
-                if (error.status === 429) {
-                    var time = error.responseJSON.time / 1000;
-                    showText("Подожди " + Math.round(time) + " сек");
-                } else {
-                    console.log(error);
-                }
-                ///
-            }).always(function () {
-                showLoader(false);
-            });
+        $.ajax($.extend(
+            {
+                url: "/vote",
+                headers: {
+                    "Accept": "application/json; charset=utf-8",
+                },
+                contentType: "application/json; charset=utf-8",
+            }, options)).done(callback).fail(function (error) {
+            ///
+            if (error.status === 429) {
+                var time = error.responseJSON.time / 1000;
+                showText("Подожди " + Math.round(time) + " сек");
+            } else {
+                console.log(error);
+            }
+            ///
+        }).always(function () {
+            showLoader(false);
         });
     }
 

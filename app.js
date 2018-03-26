@@ -28,7 +28,7 @@ let logger = morgan(function(tokens, req, res) {
         tokens.method(req, res),
         tokens.url(req, res),
         tokens.status(req, res),
-        _getCookie(req) || 'unknown', // TODO use chalk
+        req.connection.remoteAddress || 'unknown', // TODO use chalk
         req.body.vote || 'NONE',
         tokens['response-time'](req, res), 'ms',
     ].join(' ');
@@ -44,29 +44,22 @@ const postVoteLimiter = new RateLimit({
     max: 1000, // start blocking after 1000 requests
     message: "Or you trying to hack me, or i made a bug",
     skip: function (req) { // allow users with cookie to vote anyway
-        return _getVoteId(_getCookie(req), req.connection.remoteAddress, _getFingerprint(req));
+        return _getVoteId(_getCookie(req), req.connection.remoteAddress);
     }
 });
 
 app.post('/vote', postVoteLimiter, (req, res) => {
-    let fingerprint = _getFingerprint(req);
-    if (!fingerprint) {
-        res.sendStatus(400);
-        return;
-    }
-
     let cookie = _getCookie(req);
 
     let data = {
-        fingerprint: fingerprint,
         vote: req.body.vote,
     };
 
     if (!cookie) {
-        let generatedUserId = _generateUserId(req.connection.remoteAddress, fingerprint);
+        let generatedUserId = _generateUserId(req.connection.remoteAddress);
         insertNewVote(data, res, generatedUserId);
     } else {
-        let id = _getVoteId(cookie, req.connection.remoteAddress, fingerprint);
+        let id = _getVoteId(cookie, req.connection.remoteAddress);
         if (id) {
             updateVote(id, data, res);
         } else {
@@ -76,7 +69,7 @@ app.post('/vote', postVoteLimiter, (req, res) => {
 });
 
 app.get('/vote', (req, res) => {
-    let cookieUserId = _getVoteId(_getCookie(req), req.connection.remoteAddress, _getFingerprint(req));
+    let cookieUserId = _getVoteId(_getCookie(req), req.connection.remoteAddress);
 
     if (!cookieUserId) {
         fuckHackers(res);
@@ -107,17 +100,17 @@ function _getCookie(req) {
     return req.cookies[USER_COOKIE_NAME];
 }
 
-function _generateUserId(ipAddr, fingerPrint) {
-    return ipAddr + fingerPrint;
+function _generateUserId(ipAddr) {
+    return ipAddr;
 }
 
-function _getVoteId(cookie, ipAddress, fingerprint) {
+function _getVoteId(cookie, ipAddress) {
     try {
         if (!cookie) {
             return null;
         }
         let decrypted = decrypt(cookie);
-        let userId = ipAddress + fingerprint;
+        let userId = ipAddress;
         if (!decrypted.startsWith(userId)) {
             return null;
         }
@@ -126,10 +119,6 @@ function _getVoteId(cookie, ipAddress, fingerprint) {
 
     }
     return null;
-}
-
-function _getFingerprint(req) {
-    return req.headers['fingerprint'];
 }
 
 function insertNewVote(data, res, userID) {
