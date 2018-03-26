@@ -1,3 +1,5 @@
 [submodule "public/presentation"]
 	path = public/presentation
-	url = git@github.com:bunopus/presentation-vue-vs-react.git
+	url = https://github.com/bunopus/presentation-vue-vs-react.git
+    ignore = dirty
+
