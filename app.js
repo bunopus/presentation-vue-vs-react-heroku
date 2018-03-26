@@ -44,7 +44,7 @@ const postVoteLimiter = new RateLimit({
     max: 1000, // start blocking after 1000 requests
     message: "Or you trying to hack me, or i made a bug",
     skip: function (req) { // allow users with cookie to vote anyway
-        return _getVoteId(_getCookie(req), req.connection.remoteAddress);
+        return _getVoteId(_getCookie(req), getClientIp(req));
     }
 });
 
@@ -56,10 +56,10 @@ app.post('/vote', postVoteLimiter, (req, res) => {
     };
 
     if (!cookie) {
-        let generatedUserId = _generateUserId(req.connection.remoteAddress);
+        let generatedUserId = _generateUserId(getClientIp(req));
         insertNewVote(data, res, generatedUserId);
     } else {
-        let id = _getVoteId(cookie, req.connection.remoteAddress);
+        let id = _getVoteId(cookie, getClientIp(req));
         if (id) {
             updateVote(id, data, res);
         } else {
@@ -69,7 +69,7 @@ app.post('/vote', postVoteLimiter, (req, res) => {
 });
 
 app.get('/vote', (req, res) => {
-    let cookieUserId = _getVoteId(_getCookie(req), req.connection.remoteAddress);
+    let cookieUserId = _getVoteId(_getCookie(req), getClientIp(req));
 
     if (!cookieUserId) {
         fuckHackers(res);
