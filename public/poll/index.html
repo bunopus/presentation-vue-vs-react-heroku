@@ -94,32 +94,33 @@
         $(".votes").toggleClass("invisible", show);
     }
 
-    function setCurrentChoise(id) {
+    function setCurrentChoice(id) {
         $(".votes .logo").removeClass("selected");
         $("#"+id).addClass("selected");
     }
 
-    function vote(opinion) {
+    function vote(options, callback) {
         showLoader(true);
 
         var fp = new Fingerprint2();
         fp.get(function (result) {
-            $.ajax({
-                url: "/vote",
-                type: "POST",
-                headers: {
-                    "Accept": "application/json; charset=utf-8",
-                    "fingerprint": result
-                },
-                contentType: "application/json; charset=utf-8",
-                data: JSON.stringify({vote: opinion}),
-            }).fail(function (error) {
-                if(error.status === 429) {
-                    var time = error.responseJSON.time/1000;
+            $.ajax($.extend(
+                {
+                    url: "/vote",
+                    headers: {
+                        "Accept": "application/json; charset=utf-8",
+                        "fingerprint": result
+                    },
+                    contentType: "application/json; charset=utf-8",
+                }, options)).done(callback).fail(function (error) {
+                ///
+                if (error.status === 429) {
+                    var time = error.responseJSON.time / 1000;
                     showText("Подожди " + Math.round(time) + " сек");
                 } else {
                     console.log(error);
                 }
+                ///
             }).always(function () {
                 showLoader(false);
             });
@@ -127,12 +128,19 @@
     }
 
     $(document).ready(function () {
-        showLoader(false);
+        vote({
+            type: "GET"
+        }, function (result) {
+            setCurrentChoice(result.vote);
+        })
     });
 
     $(".logo").on("click", function () {
-        setCurrentChoise(this.id);
-        vote(this.id);
+        setCurrentChoice(this.id);
+        vote({
+            type: "POST",
+            data: JSON.stringify({vote: this.id}),
+        });
     });
 
 </script>
