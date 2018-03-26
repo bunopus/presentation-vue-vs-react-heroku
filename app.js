@@ -45,6 +45,9 @@ const postVoteLimiter = new RateLimit({
     message: "Or you trying to hack me, or i made a bug",
     skip: function (req) { // allow users with cookie to vote anyway
         return _getVoteId(_getCookie(req), getClientIp(req));
+    },
+    keyGenerator: function (req) {
+        return getClientIp(req);
     }
 });
 
