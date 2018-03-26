@@ -19,6 +19,7 @@ let db;
 app.enable('trust proxy');
 
 const USER_COOKIE_NAME = 'poll-cookie';
+const SEPARATOR = "|";
 
 app.use(bodyParser.json());
 app.use(cookieParser());
@@ -113,11 +114,16 @@ function _getVoteId(cookie, ipAddress) {
             return null;
         }
         let decrypted = decrypt(cookie);
-        let userId = ipAddress;
-        if (!decrypted.startsWith(userId)) {
+        let chunks = decrypted.split(SEPARATOR);
+        if (chunks[0] !== ipAddress) {
             return null;
         }
-        return decrypted.replace(userId, '');
+
+        let hash = crypto.createHash('md5').update(chunks[1]).digest("hex");
+        if(chunks[2] !== hash) {
+            return null;
+        }
+        return chunks[1];
     } catch(e) {
 
     }
@@ -127,7 +133,8 @@ function _getVoteId(cookie, ipAddress) {
 function insertNewVote(data, res, userID) {
     db.collection('votes').insertOne(data)
         .then((result) => {
-            let str = encrypt(userID + result.insertedId);
+            let hash = crypto.createHash('md5').update(result.insertedId.toString()).digest("hex");
+            let str = encrypt(`${userID}${SEPARATOR}${result.insertedId}${SEPARATOR}${hash}`);
             res.cookie(USER_COOKIE_NAME, str, {
                 maxAge: 30 * 24 * 60 * 60 * 1000,
                 httpOnly: true,
