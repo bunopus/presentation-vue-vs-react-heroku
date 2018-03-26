@@ -38,11 +38,14 @@ app.use(logger);
 app.use(express.static(__dirname + '/public'));
 
 const postVoteLimiter = new RateLimit({
-    windowMs: 5*60*1000, // 5 minutes window
-    delayAfter: 300, // begin slowing down responses after the first 300 request
-    delayMs: 1000, // slow down subsequent responses by 10 seconds per request
-    max: 300, // start blocking after 300 requests
+    windowMs: 60*60*1000, // one hour window
+    delayAfter: 500, // begin slowing down responses after the first 500 request
+    delayMs: 100, // slow down subsequent responses by 100 ms per request
+    max: 1000, // start blocking after 1000 requests
     message: "Or you trying to hack me, or i made a bug",
+    skip: function (req) { // allow users with cookie to vote anyway
+        return _getVoteId(_getCookie(req), req.connection.remoteAddress, _getFingerprint(req));
+    }
 });
 
 app.post('/vote', postVoteLimiter, (req, res) => {
@@ -109,12 +112,20 @@ function _generateUserId(ipAddr, fingerPrint) {
 }
 
 function _getVoteId(cookie, ipAddress, fingerprint) {
-    let decrypted = decrypt(cookie);
-    let userId = ipAddress+fingerprint;
-    if(!decrypted.startsWith(userId)){
-        return null;
+    try {
+        if (!cookie) {
+            return null;
+        }
+        let decrypted = decrypt(cookie);
+        let userId = ipAddress + fingerprint;
+        if (!decrypted.startsWith(userId)) {
+            return null;
+        }
+        return decrypted.replace(userId, '');
+    } catch(e) {
+
     }
-    return decrypted.replace(userId, '');
+    return null;
 }
 
 function _getFingerprint(req) {
